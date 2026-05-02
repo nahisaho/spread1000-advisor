@@ -1,23 +1,16 @@
 import { NextResponse } from 'next/server';
-import { FileProjectRepository } from '@/infrastructure/persistence/FileProjectRepository';
+import { getProjectRepo } from '@/app/api/_lib/dependencies';
 import { validateProjectName } from '@/lib/validation';
-
-let repoInstance: FileProjectRepository | null = null;
-
-export function getProjectRepo(): FileProjectRepository {
-  if (!repoInstance) {
-    repoInstance = new FileProjectRepository();
-  }
-  return repoInstance;
-}
+import { classifyError, type ErrorResponse } from '@/lib/errors';
 
 export async function GET() {
   try {
     const repo = getProjectRepo();
     const projects = await repo.list();
     return NextResponse.json(projects);
-  } catch {
-    return NextResponse.json({ error: 'Failed to list projects' }, { status: 500 });
+  } catch (error) {
+    const errResponse: ErrorResponse = classifyError(error);
+    return NextResponse.json(errResponse, { status: 500 });
   }
 }
 
@@ -38,7 +31,8 @@ export async function POST(request: Request) {
     const repo = getProjectRepo();
     const project = await repo.create(name);
     return NextResponse.json(project, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
+  } catch (error) {
+    const errResponse: ErrorResponse = classifyError(error);
+    return NextResponse.json(errResponse, { status: 500 });
   }
 }
