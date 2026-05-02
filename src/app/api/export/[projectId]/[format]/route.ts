@@ -47,7 +47,7 @@ export async function GET(
 
     if (format === 'zip') {
       const result = await uc.exportAll(projectId);
-      return new Response(result.data, {
+      return new Response(new Uint8Array(result.data), {
         headers: {
           'Content-Type': result.mimeType,
           'Content-Disposition': `attachment; filename="${result.filename}"`,
@@ -62,7 +62,7 @@ export async function GET(
       format as ExportFormat,
     );
 
-    return new Response(result.data, {
+    return new Response(new Uint8Array(result.data), {
       headers: {
         'Content-Type': result.mimeType,
         'Content-Disposition': `attachment; filename="${result.filename}"`,
