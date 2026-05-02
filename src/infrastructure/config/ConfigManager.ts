@@ -74,11 +74,12 @@ export class ConfigManager {
     const result: Record<string, unknown> = {};
     const llm: Record<string, unknown> = {};
 
-    if (process.env.LLM_PROVIDER) llm.type = process.env.LLM_PROVIDER;
-    if (process.env.LLM_API_KEY) llm.apiKey = process.env.LLM_API_KEY;
-    if (process.env.LLM_ENDPOINT) llm.endpoint = process.env.LLM_ENDPOINT;
-    if (process.env.LLM_MODEL) llm.model = process.env.LLM_MODEL;
-    if (process.env.AZURE_DEPLOYMENT_NAME) llm.deploymentName = process.env.AZURE_DEPLOYMENT_NAME;
+    // Only use env vars that are non-empty (empty string = not set)
+    if (process.env.LLM_PROVIDER?.trim()) llm.type = process.env.LLM_PROVIDER;
+    if (process.env.LLM_API_KEY?.trim()) llm.apiKey = process.env.LLM_API_KEY;
+    if (process.env.LLM_ENDPOINT?.trim()) llm.endpoint = process.env.LLM_ENDPOINT;
+    if (process.env.LLM_MODEL?.trim()) llm.model = process.env.LLM_MODEL;
+    if (process.env.AZURE_DEPLOYMENT_NAME?.trim()) llm.deploymentName = process.env.AZURE_DEPLOYMENT_NAME;
 
     if (Object.keys(llm).length > 0) result.llm = llm;
 

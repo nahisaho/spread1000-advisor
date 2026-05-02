@@ -6,10 +6,10 @@ services:
     ports:
       - "127.0.0.1:3100:3000"
     environment:
-      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
-      - LLM_MODEL=${LLM_MODEL:-llama3}
+      - LLM_PROVIDER=${LLM_PROVIDER:-}
+      - LLM_MODEL=${LLM_MODEL:-}
       - LLM_API_KEY=${LLM_API_KEY:-}
-      - LLM_ENDPOINT=${LLM_ENDPOINT:-http://host.docker.internal:11434}
+      - LLM_ENDPOINT=${LLM_ENDPOINT:-}
       - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
