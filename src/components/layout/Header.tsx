@@ -28,6 +28,9 @@ export function Header() {
           <a href="/" className="text-sm text-gray-600 hover:text-gray-900">
             {t("home")}
           </a>
+          <a href="/settings" className="text-sm text-gray-600 hover:text-gray-900">
+            {t("settings")}
+          </a>
           <button
             type="button"
             onClick={toggleLocale}
