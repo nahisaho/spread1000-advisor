@@ -47,7 +47,7 @@ npm run dev
 | LLM_MODEL | モデル名 | llama3 |
 | LLM_API_KEY | APIキー | - |
 | LLM_ENDPOINT | エンドポイントURL | http://localhost:11434 |
-| LLM_DEPLOYMENT_NAME | Azure OpenAI デプロイメント名 | - |
+| AZURE_DEPLOYMENT_NAME | Azure OpenAI デプロイメント名 | - |
 
 ## 技術スタック
 
@@ -62,7 +62,7 @@ npm run dev
 
 ```bash
 npm test          # テスト実行
-npm run test:ci   # CI用 (カバレッジ付き)
+npm run test:watch  # ウォッチモード
 ```
 
 ## ライセンス

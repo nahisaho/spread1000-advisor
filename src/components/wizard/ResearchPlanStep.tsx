@@ -19,10 +19,10 @@ export function ResearchPlanStep({ projectId, onComplete }: ResearchPlanStepProp
   const { text, isStreaming, start, reset } = useLLMStream();
 
   const saveFn = useCallback(async () => {
-    await fetch(`/api/projects/${encodeURIComponent(projectId)}/research-plan`, {
+    await fetch(`/api/projects/${encodeURIComponent(projectId)}/deliverables`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ name: 'phase1-research-plan.md', content }),
     });
   }, [projectId, content]);
 
@@ -34,8 +34,10 @@ export function ResearchPlanStep({ projectId, onComplete }: ResearchPlanStepProp
   const handleGenerate = useCallback(() => {
     reset();
     setContent('');
-    start(`/api/projects/${encodeURIComponent(projectId)}/research-plan/generate`, {
+    start('/api/llm/stream', {
       projectId,
+      action: 'generate-research-plan',
+      params: {},
     });
   }, [projectId, start, reset]);
 

@@ -118,7 +118,7 @@ export function FinalReviewStep({ projectId }: FinalReviewStepProps) {
           {/* Download buttons */}
           <div className="flex flex-wrap gap-3" data-testid="download-buttons">
             <a
-              href={`/api/projects/${encodeURIComponent(projectId)}/export/markdown`}
+              href={`/api/export/${encodeURIComponent(projectId)}/markdown`}
               download
               className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               data-testid="download-md"
@@ -126,7 +126,7 @@ export function FinalReviewStep({ projectId }: FinalReviewStepProps) {
               📄 {t('export.markdown')}
             </a>
             <a
-              href={`/api/projects/${encodeURIComponent(projectId)}/export/excel`}
+              href={`/api/export/${encodeURIComponent(projectId)}/xlsx`}
               download
               className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               data-testid="download-excel"
@@ -134,7 +134,7 @@ export function FinalReviewStep({ projectId }: FinalReviewStepProps) {
               📊 {t('export.excel')}
             </a>
             <a
-              href={`/api/projects/${encodeURIComponent(projectId)}/export/zip`}
+              href={`/api/export/${encodeURIComponent(projectId)}/zip`}
               download
               className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               data-testid="download-zip"

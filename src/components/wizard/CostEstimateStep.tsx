@@ -33,12 +33,38 @@ export function CostEstimateStep({ projectId, onComplete }: CostEstimateStepProp
   const handleEstimate = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/cost-estimate`, {
+      const res = await fetch('/api/llm/stream', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, action: 'estimate-cost', params: {} }),
       });
       if (res.ok) {
-        const data = (await res.json()) as CostEstimate;
-        setEstimate(data);
+        // Parse SSE stream for cost result
+        const reader = res.body?.getReader();
+        if (reader) {
+          const decoder = new TextDecoder();
+          let buffer = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+          }
+          // Extract content from SSE data lines
+          for (const line of buffer.split('\n')) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('data: ')) {
+              const json = trimmed.slice(6);
+              if (json === '[DONE]') break;
+              try {
+                const chunk = JSON.parse(json) as { content?: string; done?: boolean };
+                if (chunk.content) {
+                  const data = JSON.parse(chunk.content) as CostEstimate;
+                  setEstimate(data);
+                }
+              } catch { /* skip malformed */ }
+            }
+          }
+        }
       }
     } finally {
       setIsLoading(false);

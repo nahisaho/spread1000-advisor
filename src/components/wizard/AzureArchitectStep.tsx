@@ -19,10 +19,10 @@ export function AzureArchitectStep({ projectId, onComplete }: AzureArchitectStep
   const { text, isStreaming, start, reset } = useLLMStream();
 
   const saveFn = useCallback(async () => {
-    await fetch(`/api/projects/${encodeURIComponent(projectId)}/azure-architecture`, {
+    await fetch(`/api/projects/${encodeURIComponent(projectId)}/deliverables`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ name: 'phase2-azure-architecture.md', content }),
     });
   }, [projectId, content]);
 
@@ -34,8 +34,10 @@ export function AzureArchitectStep({ projectId, onComplete }: AzureArchitectStep
   const handleGenerate = useCallback(() => {
     reset();
     setContent('');
-    start(`/api/projects/${encodeURIComponent(projectId)}/azure-architecture/generate`, {
+    start('/api/llm/stream', {
       projectId,
+      action: 'design-azure',
+      params: {},
     });
   }, [projectId, start, reset]);
 

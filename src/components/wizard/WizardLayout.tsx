@@ -3,10 +3,17 @@
 import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { StepIndicator } from './StepIndicator';
+import { ContextCollectorStep } from './ContextCollectorStep';
+import { ResearchPlanStep } from './ResearchPlanStep';
+import { AzureArchitectStep } from './AzureArchitectStep';
+import { CostEstimateStep } from './CostEstimateStep';
+import { ProposalStep } from './ProposalStep';
+import { ProposalReviewStep } from './ProposalReviewStep';
+import { FinalReviewStep } from './FinalReviewStep';
 import { useWizardStep } from '@/hooks/useWizardStep';
 import { useProject } from '@/hooks/useProject';
 import { LoadingSpinner } from '@/components/common';
-import type { WizardState } from '@/domain/models/WizardStep';
+import { StepId, type WizardState } from '@/domain/models/WizardStep';
 
 interface WizardLayoutProps {
   projectId: string;
@@ -19,7 +26,7 @@ export function WizardLayout({ projectId }: WizardLayoutProps) {
   const handleStateChange = useCallback(
     async (state: Partial<WizardState>) => {
       await fetch(`/api/projects/${encodeURIComponent(projectId)}/wizard-state`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state),
       });
@@ -44,6 +51,27 @@ export function WizardLayout({ projectId }: WizardLayoutProps) {
   }
 
   return <WizardLayoutInner project={project} onStateChange={handleStateChange} />;
+}
+
+function renderStepComponent(stepId: string, projectId: string, onComplete: () => void) {
+  switch (stepId) {
+    case StepId.CONTEXT_COLLECTION:
+      return <ContextCollectorStep projectId={projectId} onComplete={onComplete} />;
+    case StepId.RESEARCH_PLAN:
+      return <ResearchPlanStep projectId={projectId} onComplete={onComplete} />;
+    case StepId.AZURE_ARCHITECTURE:
+      return <AzureArchitectStep projectId={projectId} onComplete={onComplete} />;
+    case StepId.COST_ESTIMATE:
+      return <CostEstimateStep projectId={projectId} onComplete={onComplete} />;
+    case StepId.PROPOSAL:
+      return <ProposalStep projectId={projectId} onComplete={onComplete} />;
+    case StepId.PROPOSAL_REVIEW:
+      return <ProposalReviewStep projectId={projectId} onComplete={onComplete} />;
+    case StepId.FINAL_REVIEW:
+      return <FinalReviewStep projectId={projectId} />;
+    default:
+      return <p className="text-gray-500">Unknown step</p>;
+  }
 }
 
 function WizardLayoutInner({
@@ -71,9 +99,7 @@ function WizardLayoutInner({
         className="min-h-[300px] rounded-lg border border-gray-200 bg-white p-6"
         data-testid="step-content"
       >
-        <p className="text-gray-500">
-          {t(`wizard.steps.${currentStep.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())}`)}
-        </p>
+        {renderStepComponent(currentStep, project.id, goNext)}
       </div>
 
       <div className="flex justify-between">

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ConfigManager, type ProviderType } from '@/infrastructure/config/ConfigManager';
+import { validateEndpointUrl } from '@/lib/sanitize';
 
 export async function GET() {
   try {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     await ConfigManager.saveRuntimeConfig({
       type: body.type,
       model: body.model,
-      endpoint: body.endpoint,
+      endpoint: body.endpoint && validateEndpointUrl(body.endpoint) ? body.endpoint : undefined,
       deploymentName: body.deploymentName,
     });
 

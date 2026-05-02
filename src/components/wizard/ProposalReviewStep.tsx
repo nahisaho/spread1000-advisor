@@ -37,19 +37,23 @@ export function ProposalReviewStep({ projectId, onComplete }: ProposalReviewStep
 
   const handleStartReview = useCallback(() => {
     setReviewResult(null);
-    start(`/api/projects/${encodeURIComponent(projectId)}/review`, { projectId });
+    start('/api/llm/stream', {
+      projectId,
+      action: 'review-proposal',
+      params: {},
+    });
   }, [projectId, start]);
 
-  // Fetch structured result after streaming ends
+  // Parse review result from streaming text after streaming ends
   if (text && !isStreaming && !reviewResult && !isLoadingResult) {
     setIsLoadingResult(true);
-    fetch(`/api/projects/${encodeURIComponent(projectId)}/review/result`)
-      .then((res) => res.json())
-      .then((data: ReviewApiResult) => {
-        setReviewResult(data);
-        setIsLoadingResult(false);
-      })
-      .catch(() => setIsLoadingResult(false));
+    try {
+      const data = JSON.parse(text) as ReviewApiResult;
+      setReviewResult(data);
+    } catch {
+      // If text is not valid JSON, use it as narrative review
+    }
+    setIsLoadingResult(false);
   }
 
   return (

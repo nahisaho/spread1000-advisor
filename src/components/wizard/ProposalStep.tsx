@@ -44,10 +44,10 @@ export function ProposalStep({ projectId, onComplete }: ProposalStepProps) {
   const { text, isStreaming, start, reset } = useLLMStream();
 
   const saveFn = useCallback(async () => {
-    await fetch(`/api/projects/${encodeURIComponent(projectId)}/proposal`, {
+    await fetch(`/api/projects/${encodeURIComponent(projectId)}/deliverables`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sections }),
+      body: JSON.stringify({ name: 'phase3-proposal.md', content: JSON.stringify(sections) }),
     });
   }, [projectId, sections]);
 
@@ -61,9 +61,10 @@ export function ProposalStep({ projectId, onComplete }: ProposalStepProps) {
     (sectionId: ProposalSectionId) => {
       reset();
       setGeneratingSection(sectionId);
-      start(`/api/projects/${encodeURIComponent(projectId)}/proposal/generate-section`, {
+      start('/api/llm/stream', {
         projectId,
-        sectionId,
+        action: 'generate-proposal',
+        params: { sectionId },
       });
     },
     [projectId, start, reset],

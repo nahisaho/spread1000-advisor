@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getProjectRepo } from '@/app/api/_lib/dependencies';
 import { ExportDeliverableUseCase } from '@/application/usecases/ExportDeliverableUseCase';
 import { exportProposalToMarkdown } from '@/infrastructure/export/MarkdownExporter';
+import { exportProposalToExcel } from '@/infrastructure/export/ExcelExporter';
+import { exportAllToZip } from '@/infrastructure/export/ZipExporter';
 import { classifyError, type ErrorResponse } from '@/lib/errors';
 import type { ExportFormat } from '@/domain/interfaces/IExportService';
 
@@ -31,18 +33,11 @@ export async function GET(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    const excelExporter = async () => {
-      throw new Error('Excel export not yet implemented');
-    };
-    const zipExporter = async () => {
-      throw new Error('Zip export not yet implemented');
-    };
-
     const uc = new ExportDeliverableUseCase(
       repo,
-      excelExporter,
+      exportProposalToExcel,
       exportProposalToMarkdown,
-      zipExporter,
+      exportAllToZip,
     );
 
     if (format === 'zip') {

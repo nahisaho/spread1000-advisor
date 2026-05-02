@@ -54,9 +54,10 @@ export function ContextCollectorStep({ projectId, onComplete }: ContextCollector
     }));
     setInput('');
 
-    start(`/api/projects/${encodeURIComponent(projectId)}/context`, {
-      key: currentKey,
-      answer: input.trim(),
+    start('/api/llm/stream', {
+      projectId,
+      action: 'collect-context',
+      params: { key: currentKey, answer: input.trim() },
     });
   }, [input, currentKey, projectId, start]);
 

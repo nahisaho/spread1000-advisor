@@ -10,7 +10,9 @@ services:
       - LLM_MODEL=${LLM_MODEL:-llama3}
       - LLM_API_KEY=${LLM_API_KEY:-}
       - LLM_ENDPOINT=${LLM_ENDPOINT:-http://host.docker.internal:11434}
-      - LLM_DEPLOYMENT_NAME=${LLM_DEPLOYMENT_NAME:-}
+      - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - advisor-data:/app/data
     restart: unless-stopped
