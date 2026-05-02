@@ -32,6 +32,9 @@ export function LLMSettingsForm() {
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [useCustomModel, setUseCustomModel] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -49,6 +52,37 @@ export function LLMSettingsForm() {
         // Use defaults on error
       });
   }, []);
+
+  const fetchModels = useCallback(async (provider: ProviderType, endpoint?: string, apiKey?: string) => {
+    if (provider === 'azure-openai') return; // Azure uses deployment name
+    setIsLoadingModels(true);
+    setAvailableModels([]);
+    try {
+      const res = await fetch('/api/llm/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: provider,
+          endpoint: endpoint || undefined,
+          apiKey: apiKey || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { models: string[] };
+        setAvailableModels(data.models ?? []);
+        setUseCustomModel(false);
+      }
+    } catch {
+      // Failed to fetch — user can still type manually
+    } finally {
+      setIsLoadingModels(false);
+    }
+  }, []);
+
+  // Fetch models when provider or endpoint changes
+  useEffect(() => {
+    fetchModels(form.provider, form.endpoint, form.apiKey);
+  }, [form.provider, form.endpoint, fetchModels]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = useCallback(
     (field: keyof SettingsFormState, value: string) => {
@@ -109,6 +143,9 @@ export function LLMSettingsForm() {
     }
   }, [form]);
 
+  const showModelSelector = form.provider !== 'azure-openai';
+  const hasModels = availableModels.length > 0;
+
   return (
     <div className="space-y-6">
       {/* Provider Selection */}
@@ -130,20 +167,64 @@ export function LLMSettingsForm() {
         </select>
       </div>
 
-      {/* Model Name — shown for openai, claude, ollama */}
-      {form.provider !== 'azure-openai' && (
+      {/* Model — select from available or type custom */}
+      {showModelSelector && (
         <div>
-          <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Model
-          </label>
-          <input
-            id="model"
-            type="text"
-            value={form.model}
-            onChange={(e) => handleChange('model', e.target.value)}
-            placeholder={form.provider === 'ollama' ? 'llama3' : 'gpt-4o'}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          />
+          <div className="flex items-center justify-between">
+            <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Model
+            </label>
+            <div className="flex items-center gap-2">
+              {isLoadingModels && (
+                <span className="text-xs text-gray-400">Loading...</span>
+              )}
+              {hasModels && (
+                <button
+                  type="button"
+                  onClick={() => setUseCustomModel(!useCustomModel)}
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  {useCustomModel ? '← Select from list' : 'Custom input'}
+                </button>
+              )}
+              {!isLoadingModels && (
+                <button
+                  type="button"
+                  onClick={() => fetchModels(form.provider, form.endpoint, form.apiKey)}
+                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  title="Refresh model list"
+                >
+                  ↻ Refresh
+                </button>
+              )}
+            </div>
+          </div>
+          {hasModels && !useCustomModel ? (
+            <select
+              id="model"
+              value={availableModels.includes(form.model) ? form.model : ''}
+              onChange={(e) => handleChange('model', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            >
+              {!availableModels.includes(form.model) && form.model && (
+                <option value="" disabled>
+                  {form.model} (not in list)
+                </option>
+              )}
+              {availableModels.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="model"
+              type="text"
+              value={form.model}
+              onChange={(e) => handleChange('model', e.target.value)}
+              placeholder={form.provider === 'ollama' ? 'llama3' : 'gpt-4o'}
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            />
+          )}
         </div>
       )}
 

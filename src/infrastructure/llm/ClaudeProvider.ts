@@ -105,4 +105,20 @@ export class ClaudeProvider implements ILLMProvider {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
   }
+
+  async listModels(): Promise<string[]> {
+    try {
+      const response = await this.client.models.list({ limit: 100 });
+      return response.data.map((m) => m.id);
+    } catch {
+      // Fallback to well-known models if API fails
+      return [
+        'claude-sonnet-4-20250514',
+        'claude-haiku-4-20250414',
+        'claude-3-5-sonnet-20241022',
+        'claude-3-5-haiku-20241022',
+        'claude-3-opus-20240229',
+      ];
+    }
+  }
 }
