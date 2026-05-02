@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { Header } from "@/components/layout";
+import { ErrorBoundary } from "@/components/common";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,7 +36,10 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <ErrorBoundary>
+            <Header />
+            <main className="flex-1">{children}</main>
+          </ErrorBoundary>
         </NextIntlClientProvider>
       </body>
     </html>
