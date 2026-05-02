@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { StreamingText } from '@/components/common';
 import { MarkdownEditor, MarkdownPreview } from '@/components/editor';
+import { StepConfirmation } from './StepConfirmation';
 import { useLLMStream } from '@/hooks/useLLMStream';
 import { useAutoSave } from '@/hooks/useAutoSave';
 
@@ -16,6 +17,7 @@ export function AzureArchitectStep({ projectId, onComplete }: AzureArchitectStep
   const t = useTranslations();
   const [content, setContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const { text, isStreaming, start, reset } = useLLMStream();
 
   const saveFn = useCallback(async () => {
@@ -102,17 +104,26 @@ export function AzureArchitectStep({ projectId, onComplete }: AzureArchitectStep
         </div>
       )}
 
-      {hasContent && !isStreaming && (
+      {hasContent && !isStreaming && !showConfirmation && (
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={onComplete}
+            onClick={() => setShowConfirmation(true)}
             className="rounded-md bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700"
             data-testid="step-complete"
           >
-            {t('wizard.actions.next')}
+            内容を確認する
           </button>
         </div>
+      )}
+
+      {showConfirmation && (
+        <StepConfirmation
+          title="Azure 構成設計の確認"
+          summary={`Azure 構成設計が生成されました。\nこの内容で次のステップ（コスト見積もり）に進みますか？`}
+          onConfirm={onComplete}
+          onRevise={() => { setShowConfirmation(false); setIsEditing(true); }}
+        />
       )}
     </div>
   );

@@ -18,6 +18,8 @@ import type { IProjectRepository } from '@/domain/interfaces/IProjectRepository'
 
 type StreamAction =
   | 'collect-context'
+  | 'analyze-context'
+  | 'estimate-context'
   | 'generate-research-plan'
   | 'design-azure'
   | 'estimate-cost'
@@ -26,6 +28,8 @@ type StreamAction =
 
 const VALID_ACTIONS: ReadonlySet<string> = new Set<StreamAction>([
   'collect-context',
+  'analyze-context',
+  'estimate-context',
   'generate-research-plan',
   'design-azure',
   'estimate-cost',
@@ -45,6 +49,14 @@ function createStreamGenerator(
       const uc = new CollectContextUseCase(provider, projectRepo, new ContextCollectorPrompt());
       return uc.askNextQuestion(projectId, params.metaPrompt as never);
     }
+    case 'estimate-context': {
+      const uc = new CollectContextUseCase(provider, projectRepo, new ContextCollectorPrompt());
+      return uc.proposeEstimate(
+        projectId,
+        params.key as never,
+        params.metaPrompt as never,
+      );
+    }
     case 'generate-research-plan': {
       const uc = new GenerateResearchPlanUseCase(provider, projectRepo, new ResearchPlannerPrompt());
       return uc.execute(projectId, params.metaPrompt as never);
@@ -53,8 +65,9 @@ function createStreamGenerator(
       const uc = new DesignAzureArchitectureUseCase(provider, projectRepo, new AzureArchitectPrompt());
       return uc.execute(projectId, params.metaPrompt as never);
     }
-    case 'estimate-cost': {
-      // EstimateCostUseCase returns Promise, not stream — wrap as single-chunk
+    case 'estimate-cost':
+    case 'analyze-context': {
+      // These are handled as non-streaming actions before createStreamGenerator is called
       return null;
     }
     case 'generate-proposal': {
@@ -114,6 +127,34 @@ export async function POST(req: Request) {
         async start(controller) {
           try {
             const result = await uc.execute(projectId);
+            controller.enqueue(encodeSSE({ content: JSON.stringify(result), done: false }));
+            controller.enqueue(encodeSSE({ content: '', done: true }));
+            controller.close();
+          } catch (error) {
+            controller.enqueue(encodeSSE({ error: classifyError(error) }));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
+    // Handle analyze-context: non-streaming JSON result
+    if (action === 'analyze-context') {
+      const uc = new CollectContextUseCase(provider, projectRepo, new ContextCollectorPrompt());
+      const userInput = (params.userInput as string) ?? '';
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            const result = await uc.analyzeInitialInput(projectId, userInput);
             controller.enqueue(encodeSSE({ content: JSON.stringify(result), done: false }));
             controller.enqueue(encodeSSE({ content: '', done: true }));
             controller.close();

@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { StreamingText } from '@/components/common';
 import { MarkdownEditor, MarkdownPreview } from '@/components/editor';
+import { StepConfirmation } from './StepConfirmation';
 import { useLLMStream } from '@/hooks/useLLMStream';
 import { useAutoSave } from '@/hooks/useAutoSave';
 
@@ -16,6 +17,7 @@ export function ResearchPlanStep({ projectId, onComplete }: ResearchPlanStepProp
   const t = useTranslations();
   const [content, setContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const { text, isStreaming, start, reset } = useLLMStream();
 
   const saveFn = useCallback(async () => {
@@ -34,18 +36,13 @@ export function ResearchPlanStep({ projectId, onComplete }: ResearchPlanStepProp
   const handleGenerate = useCallback(() => {
     reset();
     setContent('');
+    setShowConfirmation(false);
     start('/api/llm/stream', {
       projectId,
       action: 'generate-research-plan',
       params: {},
     });
   }, [projectId, start, reset]);
-
-  const handleStreamEnd = useCallback(() => {
-    if (text && !isStreaming) {
-      setContent(text);
-    }
-  }, [text, isStreaming]);
 
   // Sync streamed text to content when streaming ends
   if (text && !isStreaming && !content) {
@@ -108,17 +105,26 @@ export function ResearchPlanStep({ projectId, onComplete }: ResearchPlanStepProp
         </div>
       )}
 
-      {hasContent && !isStreaming && (
+      {hasContent && !isStreaming && !showConfirmation && (
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={onComplete}
+            onClick={() => setShowConfirmation(true)}
             className="rounded-md bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700"
             data-testid="step-complete"
           >
-            {t('wizard.actions.next')}
+            内容を確認する
           </button>
         </div>
+      )}
+
+      {showConfirmation && (
+        <StepConfirmation
+          title="研究プランの確認"
+          summary={`研究プランが生成されました（${content.split('\n').length}行）。\nこの内容で次のステップ（Azure構成設計）に進みますか？\n修正がある場合は「やり直す」を選択し、上の編集ボタンで修正してください。`}
+          onConfirm={onComplete}
+          onRevise={() => { setShowConfirmation(false); setIsEditing(true); }}
+        />
       )}
     </div>
   );

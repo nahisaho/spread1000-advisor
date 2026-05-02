@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { LoadingSpinner } from '@/components/common';
+import { StepConfirmation } from './StepConfirmation';
 import { DIRECT_COST_LIMIT, type CostEstimate, type CostLineItem } from '@/domain/models/CostEstimate';
 
 interface CostEstimateStepProps {
@@ -29,6 +30,7 @@ export function CostEstimateStep({ projectId, onComplete }: CostEstimateStepProp
   const t = useTranslations();
   const [estimate, setEstimate] = useState<CostEstimate | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleEstimate = useCallback(async () => {
     setIsLoading(true);
@@ -158,14 +160,23 @@ export function CostEstimateStep({ projectId, onComplete }: CostEstimateStepProp
           </div>
 
           <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={onComplete}
-              className="rounded-md bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700"
-              data-testid="step-complete"
-            >
-              {t('wizard.actions.next')}
-            </button>
+            {!showConfirmation ? (
+              <button
+                type="button"
+                onClick={() => setShowConfirmation(true)}
+                className="rounded-md bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700"
+                data-testid="step-complete"
+              >
+                内容を確認する
+              </button>
+            ) : (
+              <StepConfirmation
+                title="コスト見積もりの確認"
+                summary={`合計: ¥${estimate?.directCostTotal.toLocaleString() ?? 0}（直接経費）\nこの見積もりで次のステップ（申請書作成）に進みますか？`}
+                onConfirm={onComplete}
+                onRevise={() => setShowConfirmation(false)}
+              />
+            )}
           </div>
         </>
       )}

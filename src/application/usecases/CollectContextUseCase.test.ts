@@ -39,6 +39,18 @@ function createMockPrompt(): ContextCollectorPrompt {
       { role: 'system', content: 'system prompt' },
       { role: 'user', content: 'user prompt' },
     ]),
+    buildQuestion: vi.fn().mockReturnValue([
+      { role: 'system', content: 'system prompt' },
+      { role: 'user', content: 'user prompt' },
+    ]),
+    buildAnalysis: vi.fn().mockReturnValue([
+      { role: 'system', content: 'analysis prompt' },
+      { role: 'user', content: 'user input' },
+    ]),
+    buildEstimate: vi.fn().mockReturnValue([
+      { role: 'system', content: 'estimate prompt' },
+      { role: 'user', content: 'estimate request' },
+    ]),
   } as unknown as ContextCollectorPrompt;
 }
 
@@ -79,7 +91,7 @@ describe('CollectContextUseCase', () => {
       expect(result).toHaveLength(2);
       expect(result[0].content).toBe('What is ');
       expect(result[1].content).toBe('your purpose?');
-      expect(prompt.build).toHaveBeenCalledWith('PURPOSE', metaPrompt);
+      expect(prompt.buildQuestion).toHaveBeenCalledWith('PURPOSE', metaPrompt, 1, 6);
     });
 
     it('yields nothing when all questions are answered', async () => {

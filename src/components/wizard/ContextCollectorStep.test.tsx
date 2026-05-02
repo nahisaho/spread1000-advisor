@@ -26,11 +26,11 @@ vi.mock('@/hooks/useLLMStream', () => ({
 import { ContextCollectorStep } from './ContextCollectorStep';
 
 describe('ContextCollectorStep', () => {
-  it('renders input and send button', () => {
+  it('renders initial input and submit button', () => {
     render(<ContextCollectorStep projectId="test-id" onComplete={vi.fn()} />);
 
-    expect(screen.getByTestId('context-input')).toBeDefined();
-    expect(screen.getByTestId('context-send')).toBeDefined();
+    expect(screen.getByTestId('initial-input')).toBeDefined();
+    expect(screen.getByTestId('initial-submit')).toBeDefined();
   });
 
   it('shows progress indicator', () => {

@@ -1,5 +1,6 @@
 export { WizardLayout } from './WizardLayout';
 export { StepIndicator } from './StepIndicator';
+export { StepConfirmation } from './StepConfirmation';
 export { ContextCollectorStep } from './ContextCollectorStep';
 export { ResearchPlanStep } from './ResearchPlanStep';
 export { AzureArchitectStep } from './AzureArchitectStep';

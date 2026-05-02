@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { StreamingText } from '@/components/common';
 import { CharacterCounter, MarkdownEditor } from '@/components/editor';
+import { StepConfirmation } from './StepConfirmation';
 import { useLLMStream } from '@/hooks/useLLMStream';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SECTION_CHAR_LIMITS, type ProposalSectionId } from '@/domain/models/Proposal';
@@ -40,6 +41,7 @@ export function ProposalStep({ projectId, onComplete }: ProposalStepProps) {
   );
   const [activeSection, setActiveSection] = useState<ProposalSectionId>('research_purpose');
   const [generatingSection, setGeneratingSection] = useState<ProposalSectionId | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const { text, isStreaming, start, reset } = useLLMStream();
 
@@ -149,13 +151,22 @@ export function ProposalStep({ projectId, onComplete }: ProposalStepProps) {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={onComplete}
+          onClick={() => setShowConfirmation(true)}
           className="rounded-md bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700"
           data-testid="step-complete"
         >
-          {t('wizard.actions.next')}
+          内容を確認する
         </button>
       </div>
+
+      {showConfirmation && (
+        <StepConfirmation
+          title="申請書の確認"
+          summary="申請書の全セクションが作成されました。\nこの内容で次のステップ（レビュー）に進みますか？"
+          onConfirm={onComplete}
+          onRevise={() => setShowConfirmation(false)}
+        />
+      )}
     </div>
   );
 }
