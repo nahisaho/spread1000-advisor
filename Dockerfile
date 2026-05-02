@@ -28,8 +28,10 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Create data directory for project persistence
-RUN mkdir -p /app/data/projects && chown -R nextjs:nodejs /app/data
+# Create data directory and config file with correct ownership
+RUN mkdir -p /app/data/projects && \
+    touch /app/config.yaml && \
+    chown -R nextjs:nodejs /app/data /app/config.yaml
 
 USER nextjs
 
