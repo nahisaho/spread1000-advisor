@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createLLMProvider, type LLMProviderConfig } from '@/infrastructure/llm/LLMProviderFactory';
+import { resolveEndpointForDocker } from '@/app/api/_lib/dependencies';
 import { classifyError, type ErrorResponse } from '@/lib/errors';
 import { validateEndpointUrl } from '@/lib/sanitize';
 
@@ -16,8 +17,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const endpoint = resolveEndpointForDocker(body.endpoint);
+
     // Validate endpoint URL for SSRF protection
-    if (body.endpoint && !validateEndpointUrl(body.endpoint)) {
+    if (endpoint && !validateEndpointUrl(endpoint)) {
       return NextResponse.json(
         { ok: false, error: 'Invalid endpoint URL' },
         { status: 400 },
@@ -27,7 +30,7 @@ export async function POST(request: Request) {
     const provider = createLLMProvider({
       type: providerType as LLMProviderConfig['type'],
       apiKey: body.apiKey,
-      endpoint: body.endpoint,
+      endpoint,
       model: body.model,
       deploymentName: body.deploymentName,
     });

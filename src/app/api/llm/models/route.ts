@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createLLMProvider, type LLMProviderConfig } from '@/infrastructure/llm/LLMProviderFactory';
+import { ConfigManager } from '@/infrastructure/config/ConfigManager';
+import { resolveEndpointForDocker } from '@/app/api/_lib/dependencies';
 import { classifyError, type ErrorResponse } from '@/lib/errors';
 import { validateEndpointUrl } from '@/lib/sanitize';
 
@@ -7,7 +9,11 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<LLMProviderConfig> & { provider?: string };
 
-    const providerType = body.type ?? body.provider;
+    // Fall back to saved config if not provided
+    const config = await ConfigManager.load();
+    const providerType = body.type ?? body.provider ?? config.llm.type;
+    const endpoint = resolveEndpointForDocker(body.endpoint || config.llm.endpoint);
+
     if (!providerType) {
       return NextResponse.json(
         { error: 'type is required' },
@@ -15,7 +21,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (body.endpoint && !validateEndpointUrl(body.endpoint)) {
+    if (endpoint && !validateEndpointUrl(endpoint)) {
       return NextResponse.json(
         { error: 'Invalid endpoint URL' },
         { status: 400 },
@@ -25,7 +31,7 @@ export async function POST(request: Request) {
     const provider = createLLMProvider({
       type: providerType as LLMProviderConfig['type'],
       apiKey: body.apiKey,
-      endpoint: body.endpoint,
+      endpoint,
       model: body.model ?? 'dummy',
       deploymentName: body.deploymentName,
     });

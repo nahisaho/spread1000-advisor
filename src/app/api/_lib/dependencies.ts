@@ -15,9 +15,23 @@ export function getProjectRepo(): FileProjectRepository {
   return projectRepo;
 }
 
+/** In Docker (HOSTNAME=0.0.0.0), rewrite localhost to host.docker.internal */
+export function resolveEndpointForDocker(endpoint: string | undefined): string | undefined {
+  if (!endpoint) return undefined;
+  if (process.env.HOSTNAME === '0.0.0.0') {
+    return endpoint
+      .replace('://localhost:', '://host.docker.internal:')
+      .replace('://127.0.0.1:', '://host.docker.internal:');
+  }
+  return endpoint;
+}
+
 export async function getLLMProvider(): Promise<ILLMProvider> {
   const config = await ConfigManager.load();
-  const baseProvider = createLLMProvider(config.llm);
+  const baseProvider = createLLMProvider({
+    ...config.llm,
+    endpoint: resolveEndpointForDocker(config.llm.endpoint),
+  });
   return new RetryableProvider(baseProvider);
 }
 
