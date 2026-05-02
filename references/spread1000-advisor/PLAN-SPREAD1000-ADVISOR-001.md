@@ -13,12 +13,12 @@
 
 | フェーズ | 名称 | 主要成果物 |
 |---------|------|-----------|
-| Phase A | プロジェクト基盤 | Next.js 初期構成、型定義、設定管理 |
-| Phase B | ドメイン層 | モデル、インターフェース、バリデーション |
+| Phase A | プロジェクト基盤 | Next.js 初期構成、型定義、設定管理、エラーモデル |
+| Phase B | ドメイン層 | モデル、インターフェース、バリデーション、必須チェック、Project集約 |
 | Phase C | インフラストラクチャ層 | LLMプロバイダー、永続化、エクスポート |
 | Phase D | アプリケーション層 | ユースケース、プロンプトテンプレート |
 | Phase E | フロントエンド | ウィザードUI、フック、コンポーネント |
-| Phase F | Docker & 統合 | Dockerfile、docker-compose、E2E |
+| Phase F | Docker & 統合 | API統合、Dockerfile、docker-compose、E2E |
 
 ---
 
@@ -95,10 +95,16 @@
 - `config.yaml.example` ファイル作成
 - ユニットテスト
 
+**内容（追記: 設定の編集可能範囲）**:
+- 読み取り専用（env のみ）: `llm.apiKey`
+- ランタイム編集可能（config.yaml 更新）: `llm.type`, `llm.model`, `llm.endpoint`, `llm.deploymentName`
+- 設定変更は config.yaml に永続化し、再起動不要でリロード可能
+
 **受入基準**:
 - [ ] 環境変数が config.yaml より優先される
 - [ ] API キーが config.yaml に書かれていても無視される
 - [ ] デフォルト値が適用される
+- [ ] ランタイム設定保存が config.yaml に反映される
 - [ ] テストカバレッジ ≥ 80%
 
 ---
@@ -117,6 +123,26 @@
 **受入基準**:
 - [ ] 日英切替が動作する
 - [ ] 翻訳キーが欠落時にフォールバックする
+
+---
+
+#### TASK-A06: 共通エラーモデル
+
+**DES カバレッジ**: DES-SA-052, DES-SA-050
+**依存**: TASK-A03
+
+**内容**:
+- `src/lib/errors.ts` — エラー分類体系
+- `TimeoutError`, `RateLimitError`, `AuthError`, `NetworkError`, `ValidationError`
+- `classifyError()` — unknown → 型付きエラー変換
+- `ErrorResponse` 型 — API 統一エラーフォーマット `{ type, message, retryable }`
+- ユニットテスト
+
+**受入基準**:
+- [ ] 全エラー型がエクスポートされる
+- [ ] classifyError() が HTTP ステータスからエラー型を判定
+- [ ] retryable フラグが正しく設定される（timeout/rate_limit=true, auth=false）
+- [ ] テストカバレッジ ≥ 90%
 
 ---
 
@@ -242,6 +268,58 @@
 
 ---
 
+#### TASK-B08: 必須チェック & 横断検証ルール
+
+**DES カバレッジ**: DES-SA-007, DES-SA-008
+**依存**: TASK-B03, TASK-B04, TASK-B05
+
+**内容**:
+- `src/domain/values/MandatoryChecks.ts` — 必須チェック項目定義
+- 10項目の必須チェックリスト:
+  1. 研究目的が記載されている
+  2. AI 活用の妥当性が説明されている
+  3. 研究期間が180日以内
+  4. 直接経費 ≤ 500万円
+  5. 間接経費 = 直接経費 × 30%
+  6. 全セクションが文字数制限内
+  7. Azure リソースが記載されている
+  8. コスト明細が存在する
+  9. 研究実績が記載されている（空でない）
+  10. ノウハウ共有方法が記載されている
+- 横断検証: コスト見積もりの合計と経費計画セクションの整合性
+- `runMandatoryChecks(proposal, costEstimate): MandatoryCheckResult[]`
+- `runCrossPhaseChecks(deliverables): CrossPhaseCheckResult[]`
+- ユニットテスト
+
+**受入基準**:
+- [ ] 10項目全てのチェックが実装されている
+- [ ] 未検証価格がある場合に警告が出る
+- [ ] 横断検証で不整合が検出される
+- [ ] テストカバレッジ 100%
+
+---
+
+#### TASK-B09: Project 集約 & 状態復元
+
+**DES カバレッジ**: DES-SA-001, DES-SA-020, DES-SA-053
+**依存**: TASK-B01, TASK-B06
+
+**内容**:
+- `src/domain/models/Project.ts` — Project 集約ルート
+- プロジェクト状態のシリアライズ/デシリアライズ
+- ブラウザリロード後の状態復元フロー設計
+- `hydrateProject(projectMeta, deliverables): ProjectState`
+- ウィザードの中断・再開ロジック
+- ユニットテスト
+
+**受入基準**:
+- [ ] project.json からウィザード状態が完全に復元される
+- [ ] 存在する成果物に基づいてステップ完了状態が計算される
+- [ ] 不整合（成果物あるがステップ未完了）が自動修復される
+- [ ] テストカバレッジ ≥ 90%
+
+---
+
 ### Phase C: インフラストラクチャ層
 
 #### TASK-C01: OpenAI プロバイダー
@@ -321,7 +399,7 @@
 #### TASK-C05: LLMProviderFactory & RetryableProvider
 
 **DES カバレッジ**: DES-SA-010, DES-SA-052
-**依存**: TASK-C01, TASK-C02, TASK-C03, TASK-C04
+**依存**: TASK-C01, TASK-C02, TASK-C03, TASK-C04, TASK-A06
 
 **内容**:
 - `src/infrastructure/llm/LLMProviderFactory.ts` — createLLMProvider()
@@ -387,6 +465,8 @@
 - `src/infrastructure/export/ExcelExporter.ts` — ExcelJS で様式1形式出力
 - `src/infrastructure/export/MarkdownExporter.ts` — Markdown 連結出力
 - `src/infrastructure/export/ZipExporter.ts` — 全成果物 ZIP アーカイブ
+- Excel: SPReAD 様式1テンプレートのセルマッピング定義
+- Excel: タイムスタンプ付きファイル名 `{projectId}_様式1_研究計画調書_{YYYYMMDD}.xlsx`
 - Excel: 数式インジェクション防止 (sanitizeExcelCell)
 - Excel: 免責シート自動付与
 - ユニットテスト
@@ -394,7 +474,10 @@
 **受入基準**:
 - [ ] Excel セルに `=SUM(...)` 等が注入不可
 - [ ] 免責シートが自動追加される
+- [ ] 様式1のセクション構造が正しくマッピングされている
+- [ ] ファイル名にタイムスタンプが含まれる
 - [ ] ZIP に全成果物が含まれる
+- [ ] 個別成果物の単体ダウンロードが可能
 - [ ] テストカバレッジ ≥ 80%
 
 ---
@@ -508,17 +591,21 @@
 #### TASK-D07: ReviewProposal & FinalReview ユースケース
 
 **DES カバレッジ**: DES-SA-007, DES-SA-008
-**依存**: TASK-D01, TASK-C05, TASK-C06
+**依存**: TASK-D01, TASK-C05, TASK-C06, TASK-B08
 
 **内容**:
 - `src/application/usecases/ReviewProposalUseCase.ts` — 6審査観点スコアリング
 - `src/application/usecases/FinalReviewUseCase.ts` — 横断検証 + 提出可否判定
+- runMandatoryChecks() + runCrossPhaseChecks() を呼び出し
 - calculateJudgment() 呼び出し
 - レビューレポート保存
 
 **受入基準**:
 - [ ] 6観点スコアが構造化された ReviewResult で返る
+- [ ] 必須チェック10項目が全て実行される
+- [ ] 横断検証で経費不整合が検出される
 - [ ] calculateJudgment() で判定（mandatory, price verification 考慮）
+- [ ] 未検証価格がある場合のフォールバック警告が伝搬する
 - [ ] 改善提案 (actionItems) が含まれる
 
 ---
@@ -578,25 +665,28 @@
 #### TASK-E02: プロジェクト一覧 & 作成画面
 
 **DES カバレッジ**: DES-SA-020, DES-SA-055
-**依存**: TASK-E01, TASK-C06
+**依存**: TASK-E01, TASK-C06, TASK-B09
 
 **内容**:
 - `src/app/page.tsx` — プロジェクト一覧表示
 - `src/components/layout/ProjectSelector.tsx` — 新規作成ダイアログ
 - プロジェクト名バリデーション（フロントエンド側）
 - API ルート: `src/app/api/projects/route.ts` (GET, POST)
+- `src/hooks/useProject.ts` — プロジェクト読み込み・復元フック
 
 **受入基準**:
 - [ ] プロジェクト一覧が表示される
 - [ ] 新規作成時にバリデーションが動作する
 - [ ] 不正なプロジェクト名が拒否される
+- [ ] ブラウザリロード後にプロジェクト状態が復元される
+- [ ] 中断したウィザードの再開ができる
 
 ---
 
 #### TASK-E03: ウィザードレイアウト & ステップインジケーター
 
 **DES カバレッジ**: DES-SA-001
-**依存**: TASK-E01, TASK-B01
+**依存**: TASK-E01, TASK-B01, TASK-B09
 
 **内容**:
 - `src/app/projects/[projectId]/page.tsx` — ウィザードメインページ
@@ -616,7 +706,7 @@
 #### TASK-E04: useLLMStream フック
 
 **DES カバレッジ**: DES-SA-071
-**依存**: TASK-E01
+**依存**: TASK-E01, TASK-A06
 
 **内容**:
 - `src/hooks/useLLMStream.ts` — SSE ストリーミングフック
@@ -743,34 +833,34 @@
 
 ### Phase F: Docker & 統合
 
-#### TASK-F01: API ルート実装
+#### TASK-F01: API ルート統合 & SSE
 
 **DES カバレッジ**: §8 API ルート設計
-**依存**: TASK-D02〜TASK-D08, TASK-C05, TASK-C06
+**依存**: TASK-D02〜TASK-D09, TASK-C05, TASK-C06, TASK-A04, TASK-A06
 
 **内容**:
-- `src/app/api/projects/route.ts` (GET, POST)
 - `src/app/api/projects/[id]/route.ts` (GET)
 - `src/app/api/projects/[id]/wizard-state/route.ts` (PUT)
 - `src/app/api/projects/[id]/deliverables/route.ts` (PUT)
 - `src/app/api/projects/[id]/deliverables/[name]/route.ts` (GET)
-- `src/app/api/llm/stream/route.ts` (POST) — SSE
-- `src/app/api/llm/test/route.ts` (POST)
+- `src/app/api/llm/stream/route.ts` (POST) — SSE ストリーミング（AbortSignal 伝搬）
 - `src/app/api/cost/lookup/route.ts` (GET)
 - `src/app/api/export/[id]/[format]/route.ts` (GET)
-- `src/app/api/settings/route.ts` (GET, PUT)
+- 統一 ErrorResponse フォーマットの適用（TASK-A06 のエラーモデル使用）
+- 注: projects CRUD (GET/POST) は TASK-E02, settings/test は TASK-E10 で実装済み
 
 **受入基準**:
-- [ ] 全12エンドポイントが実装されている
-- [ ] エラーレスポンスが統一フォーマット
-- [ ] SSE ストリーミングが動作する
+- [ ] 全エンドポイントが実装されている
+- [ ] エラーレスポンスが `{ type, message, retryable }` 統一フォーマット
+- [ ] SSE ストリーミングが動作し、クライアント切断で停止する
+- [ ] 非 LLM API のレスポンスが 500ms 以内
 
 ---
 
 #### TASK-F02: Dockerfile & docker-compose.yml
 
 **DES カバレッジ**: DES-SA-040
-**依存**: TASK-F01
+**依存**: TASK-F01, TASK-E02〜TASK-E10
 
 **内容**:
 - `Dockerfile` — マルチステージビルド（deps → builder → runner）
@@ -831,6 +921,7 @@ graph TD
     A03[TASK-A03: ディレクトリ構成]
     A04[TASK-A04: ConfigManager]
     A05[TASK-A05: i18n設定]
+    A06[TASK-A06: エラーモデル]
 
     B01[TASK-B01: WizardStep]
     B02[TASK-B02: MetaPrompt]
@@ -839,6 +930,8 @@ graph TD
     B05[TASK-B05: ReviewScore]
     B06[TASK-B06: インターフェース]
     B07[TASK-B07: バリデーション]
+    B08[TASK-B08: 必須チェック]
+    B09[TASK-B09: Project集約]
 
     C01[TASK-C01: OpenAI]
     C02[TASK-C02: AzureOpenAI]
@@ -870,7 +963,7 @@ graph TD
     E09[TASK-E09: Review UI]
     E10[TASK-E10: 設定画面]
 
-    F01[TASK-F01: API Routes]
+    F01[TASK-F01: API統合]
     F02[TASK-F02: Docker]
     F03[TASK-F03: 統合テスト]
     F04[TASK-F04: ドキュメント]
@@ -878,28 +971,35 @@ graph TD
     A01 --> A02 --> A03
     A01 --> A05
     A03 --> A04
+    A03 --> A06
     A03 --> B01 & B02 & B03 & B04 & B05 & B07
+    B03 & B04 & B05 --> B08
+    B01 & B06 --> B09
     B01 & B02 & B03 & B04 & B05 --> B06
     B06 --> C01 & C02 & C03 & C04
     B06 --> C06
     B06 --> C07
     B06 & B07 --> C08
-    C01 & C02 & C03 & C04 --> C05
+    C01 & C02 & C03 & C04 & A06 --> C05
     B07 --> C06
     B02 & B04 --> D01
-    D01 & C05 & C06 --> D02 & D03 & D04 & D06 & D07
+    D01 & C05 & C06 --> D02 & D03 & D04 & D06
+    D01 & C05 & C06 & B08 --> D07
     D01 & C05 & C06 & C07 --> D05
     C08 & C06 --> D08
     B01 & C06 --> D09
     A05 --> E01
-    E01 --> E02 & E03 & E04 & E05 & E10
+    E01 & C06 & B09 --> E02
+    E01 & B01 & B09 --> E03
+    E01 & A06 --> E04
+    E01 & C06 --> E05
+    E01 & A04 --> E10
     E03 & E04 & D02 --> E06
     E03 & E04 & D03 & D04 --> E07
     E03 & E04 & D05 & D06 --> E08
     E03 & D07 --> E09
-    E01 & A04 --> E10
-    D02 & D03 & D04 & D05 & D06 & D07 & D08 & C05 & C06 --> F01
-    F01 --> F02
+    D02 & D03 & D04 & D05 & D06 & D07 & D08 & D09 & A04 & A06 --> F01
+    F01 & E02 & E03 & E06 & E07 & E08 & E09 & E10 --> F02
     F01 & F02 --> F03
     F02 --> F04
 ```
@@ -910,21 +1010,22 @@ graph TD
 
 | DES-ID | タスク |
 |--------|--------|
-| DES-SA-001 | TASK-B01, TASK-E03, TASK-D09 |
+| DES-SA-001 | TASK-B01, TASK-B09, TASK-E03, TASK-D09 |
 | DES-SA-002 | TASK-B02, TASK-D02, TASK-E06 |
 | DES-SA-003 | TASK-D01, TASK-D03, TASK-E07 |
 | DES-SA-004 | TASK-D01, TASK-D04, TASK-E07 |
 | DES-SA-005 | TASK-B03, TASK-D05, TASK-E08 |
 | DES-SA-006 | TASK-B04, TASK-D06, TASK-E08 |
-| DES-SA-007 | TASK-B05, TASK-D07, TASK-E09 |
-| DES-SA-008 | TASK-D07, TASK-E09 |
+| DES-SA-007 | TASK-B05, TASK-B08, TASK-D07, TASK-E09 |
+| DES-SA-008 | TASK-B08, TASK-D07, TASK-E09 |
 | DES-SA-010 | TASK-B06, TASK-C01〜C05, TASK-E10 |
-| DES-SA-020 | TASK-B06, TASK-C06, TASK-E02 |
+| DES-SA-020 | TASK-B06, TASK-B09, TASK-C06, TASK-E02 |
 | DES-SA-030 | TASK-B06, TASK-C07 |
 | DES-SA-030b | TASK-A05 |
 | DES-SA-040 | TASK-A01, TASK-F02 |
-| DES-SA-050 | TASK-E04, TASK-F01 |
-| DES-SA-052 | TASK-C05 |
+| DES-SA-050 | TASK-A06, TASK-E04, TASK-F01 |
+| DES-SA-052 | TASK-A06, TASK-C05 |
+| DES-SA-053 | TASK-B09, TASK-E05 |
 | DES-SA-055 | TASK-B07, TASK-C06 |
 | DES-SA-060 | TASK-A04, TASK-E10 |
 | DES-SA-061 | 設計上の非搭載（実装作業なし） |
@@ -941,12 +1042,12 @@ graph TD
 
 ## 5. 実装優先順位
 
-1. **Phase A** (基盤) → 並行なし、全後続の前提
-2. **Phase B** (ドメイン) → A完了後、全タスク並行可能
-3. **Phase C** (インフラ) → B06完了後、C01〜C04 並行、C05 は C01〜C04 後
-4. **Phase D** (アプリ) → C完了後、D01 先行、D02〜D09 は D01 後並行可能
-5. **Phase E** (フロント) → A05完了後に E01 開始可、ユースケース完了後に各ステップ UI
-6. **Phase F** (統合) → D,E 完了後
+1. **Phase A** (基盤) → A01→A02→A03 後、A04/A05/A06 並行可能
+2. **Phase B** (ドメイン) → A03完了後、B01〜B07 並行可能。B08はB03+B04+B05後。B09はB01+B06後
+3. **Phase C** (インフラ) → B06完了後、C01〜C04 並行、C05 は C01〜C04+A06 後
+4. **Phase D** (アプリ) → D01 先行（B02+B04後）、D02〜D09 は D01+C05+C06 後並行可能
+5. **Phase E** (フロント) → A05完了後に E01 開始可、各ステップ UI はユースケース完了後
+6. **Phase F** (統合) → F01 は全 D* 後、F02 は F01+全 E* 後
 
 ---
 
