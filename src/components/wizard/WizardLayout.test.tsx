@@ -17,6 +17,9 @@ vi.mock('next-intl', () => ({
       'wizard.steps.proposal': 'Proposal',
       'wizard.steps.proposalReview': 'Review',
       'wizard.steps.finalReview': 'Final Review',
+      'export.markdown': 'Markdown',
+      'export.excel': 'Excel',
+      'export.zip': 'ZIP',
     };
     return translations[key] ?? key;
   },
@@ -43,7 +46,7 @@ function createMockProject(): ProjectMeta {
   };
 }
 
-describe('WizardLayout', () => {
+describe('WizardLayout (ChatLayout)', () => {
   const originalFetch = globalThis.fetch;
 
   afterEach(() => {
@@ -56,7 +59,7 @@ describe('WizardLayout', () => {
     expect(screen.getByText('Loading...')).toBeDefined();
   });
 
-  it('renders wizard layout after loading', async () => {
+  it('renders chat layout after loading', async () => {
     const project = createMockProject();
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(project), { status: 200 }),
@@ -65,12 +68,12 @@ describe('WizardLayout', () => {
     render(<WizardLayout projectId="test-project-id" />);
 
     await vi.waitFor(() => {
-      expect(screen.getByTestId('wizard-layout')).toBeDefined();
+      expect(screen.getByTestId('chat-layout')).toBeDefined();
     });
 
-    expect(screen.getByTestId('step-indicator')).toBeDefined();
-    expect(screen.getByTestId('wizard-back')).toBeDefined();
-    expect(screen.getByTestId('wizard-next')).toBeDefined();
+    expect(screen.getByTestId('step-progress')).toBeDefined();
+    expect(screen.getByTestId('chat-thread')).toBeDefined();
+    expect(screen.getByTestId('chat-input')).toBeDefined();
   });
 
   it('shows project name', async () => {
@@ -83,21 +86,6 @@ describe('WizardLayout', () => {
 
     await vi.waitFor(() => {
       expect(screen.getByText('Test Project')).toBeDefined();
-    });
-  });
-
-  it('back button is disabled on first step', async () => {
-    const project = createMockProject();
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(project), { status: 200 }),
-    );
-
-    render(<WizardLayout projectId="test-project-id" />);
-
-    await vi.waitFor(() => {
-      const backBtn = screen.getByTestId('wizard-back');
-      expect(backBtn).toBeDefined();
-      expect((backBtn as HTMLButtonElement).disabled).toBe(true);
     });
   });
 
