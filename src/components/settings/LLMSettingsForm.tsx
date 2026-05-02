@@ -54,7 +54,6 @@ export function LLMSettingsForm() {
   }, []);
 
   const fetchModels = useCallback(async (provider: ProviderType, endpoint?: string, apiKey?: string) => {
-    if (provider === 'azure-openai') return; // Azure uses deployment name
     setIsLoadingModels(true);
     setAvailableModels([]);
     try {
@@ -79,10 +78,10 @@ export function LLMSettingsForm() {
     }
   }, []);
 
-  // Fetch models when provider or endpoint changes
+  // Fetch models when provider, endpoint, or apiKey changes
   useEffect(() => {
     fetchModels(form.provider, form.endpoint, form.apiKey);
-  }, [form.provider, form.endpoint, fetchModels]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form.provider, form.endpoint, form.apiKey, fetchModels]);
 
   const handleChange = useCallback(
     (field: keyof SettingsFormState, value: string) => {
@@ -143,7 +142,6 @@ export function LLMSettingsForm() {
     }
   }, [form]);
 
-  const showModelSelector = form.provider !== 'azure-openai';
   const hasModels = availableModels.length > 0;
 
   return (
@@ -168,11 +166,10 @@ export function LLMSettingsForm() {
       </div>
 
       {/* Model — select from available or type custom */}
-      {showModelSelector && (
-        <div>
-          <div className="flex items-center justify-between">
-            <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Model
+      <div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Model
             </label>
             <div className="flex items-center gap-2">
               {isLoadingModels && (
@@ -226,7 +223,6 @@ export function LLMSettingsForm() {
             />
           )}
         </div>
-      )}
 
       {/* Endpoint — shown for azure-openai and ollama */}
       {(form.provider === 'azure-openai' || form.provider === 'ollama') && (
