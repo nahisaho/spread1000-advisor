@@ -1,5 +1,38 @@
 import type { MetaPrompt } from '@/domain/models/MetaPrompt';
+import { REVIEW_CRITERION_LABELS, type ReviewCriterionId } from '@/domain/values/ReviewScore';
 import type { PromptMessage } from './types';
+
+/** Detailed descriptions for each review criterion, keyed by canonical ID */
+const CRITERION_DETAILS: Record<ReviewCriterionId, string[]> = {
+  social_impact: [
+    '- 研究成果が社会や学術にもたらすインパクトは十分か',
+    '- 研究テーマの新規性・独自性はあるか',
+  ],
+  ai_validity: [
+    '- AI技術の選定は適切か',
+    '- 従来手法と比較した優位性が示されているか',
+    '- AI for Science の趣旨に合致しているか',
+  ],
+  methodology_specificity: [
+    '- 研究計画は具体的かつ実現可能か',
+    '- データ収集・分析・評価の手順が明確か',
+    '- 180日間のスケジュールは妥当か',
+  ],
+  azure_utilization: [
+    '- Azure リソースが効果的に活用されているか',
+    '- 適切な SKU・サービスが選定されているか',
+    '- クラウド活用の必然性が示されているか',
+  ],
+  research_capability: [
+    '- 申請者の研究実績は十分か',
+    '- 本研究を遂行するための技術的基盤があるか',
+  ],
+  cost_plan_validity: [
+    '- 予算配分は合理的か',
+    '- 総額が500万円以下に収まっているか',
+    '- 各費目の金額は妥当か',
+  ],
+};
 
 export class ProposalReviewerPrompt {
   build(
@@ -14,6 +47,19 @@ export class ProposalReviewerPrompt {
       .map(([section, content]) => `### ${section}\n${content}`)
       .join('\n\n');
 
+    const criteriaIds = Object.keys(REVIEW_CRITERION_LABELS) as ReviewCriterionId[];
+    const criteriaSection = criteriaIds
+      .map((id, i) => {
+        const label = REVIEW_CRITERION_LABELS[id];
+        const details = CRITERION_DETAILS[id].join('\n');
+        return `### ${i + 1}. ${label}\n${details}`;
+      })
+      .join('\n\n');
+
+    const tableRows = criteriaIds
+      .map((id) => `| ${REVIEW_CRITERION_LABELS[id]} | ◎/○/△/× | ... |`)
+      .join('\n');
+
     return [
       {
         role: 'system',
@@ -24,33 +70,7 @@ export class ProposalReviewerPrompt {
           '',
           '以下の6つの審査基準それぞれについて評価してください:',
           '',
-          '### 1. 研究の社会的意義',
-          '- 研究成果が社会や学術にもたらすインパクトは十分か',
-          '- 研究テーマの新規性・独自性はあるか',
-          '',
-          '### 2. AI活用の妥当性',
-          '- AI技術の選定は適切か',
-          '- 従来手法と比較した優位性が示されているか',
-          '- AI for Science の趣旨に合致しているか',
-          '',
-          '### 3. 研究手法の具体性',
-          '- 研究計画は具体的かつ実現可能か',
-          '- データ収集・分析・評価の手順が明確か',
-          '- 180日間のスケジュールは妥当か',
-          '',
-          '### 4. Azure活用度',
-          '- Azure リソースが効果的に活用されているか',
-          '- 適切な SKU・サービスが選定されているか',
-          '- クラウド活用の必然性が示されているか',
-          '',
-          '### 5. 研究遂行能力',
-          '- 申請者の研究実績は十分か',
-          '- 本研究を遂行するための技術的基盤があるか',
-          '',
-          '### 6. コスト計画の妥当性',
-          '- 予算配分は合理的か',
-          '- 総額が500万円以下に収まっているか',
-          '- 各費目の金額は妥当か',
+          criteriaSection,
           '',
           '## 評価記号',
           '各基準を以下の4段階で評価してください:',
@@ -63,12 +83,7 @@ export class ProposalReviewerPrompt {
           '```',
           '| 審査基準 | 評価 | コメント |',
           '|----------|------|----------|',
-          '| 研究の社会的意義 | ◎/○/△/× | ... |',
-          '| AI活用の妥当性 | ◎/○/△/× | ... |',
-          '| 研究手法の具体性 | ◎/○/△/× | ... |',
-          '| Azure活用度 | ◎/○/△/× | ... |',
-          '| 研究遂行能力 | ◎/○/△/× | ... |',
-          '| コスト計画の妥当性 | ◎/○/△/× | ... |',
+          tableRows,
           '```',
           '',
           '評価テーブルの後に、以下を記述してください:',

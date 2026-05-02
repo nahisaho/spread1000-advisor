@@ -76,15 +76,18 @@ export function runMandatoryChecks(
     },
     // 3. period-within-180
     (() => {
-      const section = findSection(proposal, 'research_purpose');
-      const allContent = proposal.sections.map((s) => s.content).join(' ');
-      const days = parsePeriodDays(allContent);
+      // Parse period from research_purpose and research_method sections only
+      const periodSections = proposal.sections
+        .filter((s) => s.id === 'research_purpose' || s.id === 'research_method')
+        .map((s) => s.content)
+        .join(' ');
+      const days = parsePeriodDays(periodSections);
       if (days === null) {
         return {
           id: 'period-within-180' as const,
           label: '研究期間が180日以内',
           passed: false,
-          detail: '研究期間を解析できませんでした',
+          detail: '研究目的・研究手法セクションから研究期間を解析できませんでした',
         };
       }
       return {
@@ -126,24 +129,44 @@ export function runMandatoryChecks(
         }),
       };
     })(),
-    // 7. azure-resources
-    {
-      id: 'azure-resources',
-      label: 'Azure リソースが記載されている',
-      passed: costEstimate.items.length > 0,
-      ...(costEstimate.items.length === 0 && {
-        detail: 'Azure リソースが記載されていません',
-      }),
-    },
-    // 8. cost-detail
-    {
-      id: 'cost-detail',
-      label: 'コスト明細が存在する',
-      passed: costEstimate.items.length > 0,
-      ...(costEstimate.items.length === 0 && {
-        detail: 'コスト明細が存在しません',
-      }),
-    },
+    // 7. azure-resources — check that items reference Azure services
+    (() => {
+      const hasAzureItems = costEstimate.items.some(
+        (item) =>
+          item.resourceName.toLowerCase().includes('azure') ||
+          item.sku.toLowerCase().includes('azure')
+      );
+      return {
+        id: 'azure-resources' as const,
+        label: 'Azure リソースが記載されている',
+        passed: hasAzureItems,
+        ...(!hasAzureItems && {
+          detail: 'Azure サービスを含むコスト項目がありません',
+        }),
+      };
+    })(),
+    // 8. cost-detail — check that items have complete information
+    (() => {
+      const hasCompleteItems =
+        costEstimate.items.length > 0 &&
+        costEstimate.items.every(
+          (item) =>
+            item.resourceName.trim().length > 0 &&
+            item.quantity > 0 &&
+            item.unitPrice > 0
+        );
+      return {
+        id: 'cost-detail' as const,
+        label: 'コスト明細が完備している',
+        passed: hasCompleteItems,
+        ...(!hasCompleteItems && {
+          detail:
+            costEstimate.items.length === 0
+              ? 'コスト明細が存在しません'
+              : '不完全なコスト項目があります（サービス名・数量・単価を確認）',
+        }),
+      };
+    })(),
     // 9. achievements-present
     {
       id: 'achievements-present',

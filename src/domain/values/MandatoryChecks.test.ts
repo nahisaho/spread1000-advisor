@@ -57,19 +57,16 @@ function makeCostEstimate(overrides: Partial<CostEstimate> = {}): CostEstimate {
   const items = overrides.items ?? [makeItem()];
   const directCostTotal = overrides.directCostTotal ?? 1_100_000;
   const indirectCostTotal = overrides.indirectCostTotal ?? directCostTotal * 0.3;
-  return {
+  const base = {
     items,
     directCostTotal,
-    indirectCostRate: 0.3,
+    indirectCostRate: 0.3 as const,
     indirectCostTotal,
     grandTotal: overrides.grandTotal ?? directCostTotal + indirectCostTotal,
-    currency: 'JPY',
+    currency: 'JPY' as const,
     retrievedAt: '2024-01-01',
-    ...overrides,
-    // ensure indirectCostRate and currency stay correct
-    indirectCostRate: 0.3,
-    currency: 'JPY',
-  } as CostEstimate;
+  };
+  return { ...base, ...overrides, indirectCostRate: 0.3, currency: 'JPY' } as CostEstimate;
 }
 
 // --- tests ---

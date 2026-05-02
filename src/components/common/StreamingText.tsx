@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 
@@ -13,6 +13,7 @@ export function StreamingText({ text, isStreaming }: StreamingTextProps) {
   const [displayedLength, setDisplayedLength] = useState(
     isStreaming ? 0 : text.length,
   );
+  const prevTextRef = useRef(text);
 
   useEffect(() => {
     if (!isStreaming) {
@@ -30,9 +31,11 @@ export function StreamingText({ text, isStreaming }: StreamingTextProps) {
   }, [isStreaming, displayedLength, text.length]);
 
   useEffect(() => {
-    if (isStreaming) {
+    // Only reset when a new stream starts (text shrinks or changes entirely)
+    if (isStreaming && text.length < prevTextRef.current.length) {
       setDisplayedLength(0);
     }
+    prevTextRef.current = text;
   }, [text, isStreaming]);
 
   const displayedText = text.slice(0, displayedLength);

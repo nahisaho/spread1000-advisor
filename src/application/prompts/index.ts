@@ -1,4 +1,4 @@
-export { PromptMessage } from './types';
+export type { PromptMessage } from './types';
 export { ContextCollectorPrompt } from './context-collector';
 export { ResearchPlannerPrompt } from './research-planner';
 export { AzureArchitectPrompt } from './azure-architect';

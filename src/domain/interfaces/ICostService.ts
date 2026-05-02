@@ -1,6 +1,10 @@
 export interface PriceLookupResult {
-  readonly unitPrice: number;
-  readonly currency: string;
+  /** Unit price normalized to JPY */
+  readonly unitPriceJpy: number;
+  /** Original currency from API (e.g. 'USD', 'JPY') */
+  readonly originalCurrency: string;
+  /** Original unit price before conversion */
+  readonly originalUnitPrice: number;
   readonly source: 'api' | 'fallback';
   readonly retailPriceId?: string;
   readonly retrievedAt: string;
