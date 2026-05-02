@@ -1,0 +1,70 @@
+{
+  "app": {
+    "title": "SPReAD-1000 Application Assistant",
+    "description": "AI-powered SPReAD-1000 grant application support tool"
+  },
+  "nav": {
+    "home": "Home",
+    "settings": "Settings",
+    "newProject": "New Project"
+  },
+  "wizard": {
+    "steps": {
+      "contextCollection": "Context Collection",
+      "researchPlan": "Research Plan",
+      "azureArchitecture": "Azure Architecture",
+      "costEstimate": "Cost Estimate",
+      "proposal": "Proposal",
+      "proposalReview": "Review",
+      "finalReview": "Final Review"
+    },
+    "actions": {
+      "next": "Next",
+      "back": "Back",
+      "generate": "Generate",
+      "save": "Save",
+      "download": "Download",
+      "regenerate": "Regenerate"
+    },
+    "status": {
+      "notStarted": "Not Started",
+      "inProgress": "In Progress",
+      "completed": "Completed"
+    }
+  },
+  "settings": {
+    "llmProvider": "LLM Provider",
+    "model": "Model",
+    "endpoint": "Endpoint",
+    "testConnection": "Test Connection",
+    "connectionSuccess": "Connection Successful",
+    "connectionFailed": "Connection Failed"
+  },
+  "export": {
+    "markdown": "Markdown",
+    "excel": "Excel (.xlsx)",
+    "zip": "Download All (ZIP)"
+  },
+  "review": {
+    "criteria": {
+      "aiValidity": "AI Utilization Validity",
+      "researchTrackRecord": "Research Track Record",
+      "planBudgetValidity": "Plan & Budget Validity",
+      "noveltySuperiority": "Novelty & Superiority",
+      "knowhowSharing": "Know-how Sharing",
+      "impactPotential": "Impact Potential"
+    },
+    "judgment": {
+      "submit": "🟢 Recommended for Submission",
+      "revise": "🟡 Revision Needed",
+      "reject": "🔴 Major Revision Required"
+    }
+  },
+  "common": {
+    "saving": "Saving...",
+    "saved": "Saved",
+    "error": "Error",
+    "loading": "Loading...",
+    "disclaimer": "⚠️ This tool provides AI-generated reference materials. Accuracy and completeness are not guaranteed."
+  }
+}

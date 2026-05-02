@@ -1,0 +1,70 @@
+{
+  "app": {
+    "title": "SPReAD-1000 申請書作成支援",
+    "description": "AI を活用した SPReAD-1000 申請書作成支援ツール"
+  },
+  "nav": {
+    "home": "ホーム",
+    "settings": "設定",
+    "newProject": "新規プロジェクト"
+  },
+  "wizard": {
+    "steps": {
+      "contextCollection": "コンテキスト収集",
+      "researchPlan": "研究プラン",
+      "azureArchitecture": "Azure 構成",
+      "costEstimate": "コスト見積",
+      "proposal": "申請書作成",
+      "proposalReview": "レビュー",
+      "finalReview": "最終判定"
+    },
+    "actions": {
+      "next": "次へ",
+      "back": "戻る",
+      "generate": "生成",
+      "save": "保存",
+      "download": "ダウンロード",
+      "regenerate": "再生成"
+    },
+    "status": {
+      "notStarted": "未着手",
+      "inProgress": "進行中",
+      "completed": "完了"
+    }
+  },
+  "settings": {
+    "llmProvider": "LLM プロバイダー",
+    "model": "モデル",
+    "endpoint": "エンドポイント",
+    "testConnection": "接続テスト",
+    "connectionSuccess": "接続成功",
+    "connectionFailed": "接続失敗"
+  },
+  "export": {
+    "markdown": "Markdown",
+    "excel": "Excel (.xlsx)",
+    "zip": "一括ダウンロード (ZIP)"
+  },
+  "review": {
+    "criteria": {
+      "aiValidity": "AI 活用の妥当性",
+      "researchTrackRecord": "研究実績",
+      "planBudgetValidity": "計画・経費の妥当性",
+      "noveltySuperiority": "新規性・優位性",
+      "knowhowSharing": "ノウハウ共有",
+      "impactPotential": "波及効果"
+    },
+    "judgment": {
+      "submit": "🟢 提出推奨",
+      "revise": "🟡 要修正",
+      "reject": "🔴 大幅見直し"
+    }
+  },
+  "common": {
+    "saving": "保存中...",
+    "saved": "保存済み",
+    "error": "エラー",
+    "loading": "読み込み中...",
+    "disclaimer": "⚠️ 本ツールは AI が生成した参考資料を提供します。内容の正確性・完全性は保証されません。"
+  }
+}
